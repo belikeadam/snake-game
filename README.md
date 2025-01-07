@@ -1,12 +1,4 @@
-Collecting workspace information
-
-Here's an enhanced 
-
-README.md
-
- for the Snake Game project:
-
-```markdown
+ 
 # 🐍 Snake Game
 
 A modern interpretation of the classic Nokia Snake game built with React, TypeScript, and Framer Motion.
