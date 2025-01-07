@@ -92,6 +92,4 @@ Contributions are welcome! Feel free to:
 
 This project is open source and available under the MIT License.
 ```
-
-This README provides a comprehensive overview of your Snake Game implementation, highlighting its features, technical aspects, and how to get started. It's structured to help users understand both how to play the game and how to work with the codebase.
-This README provides a comprehensive overview of your Snake Game implementation, highlighting its features, technical aspects, and how to get started. It's structured to help users understand both how to play the game and how to work with the codebase.
+ 
