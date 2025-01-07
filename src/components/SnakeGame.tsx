@@ -146,7 +146,7 @@ export default function SnakeGame() {
                     setTimeout(() => setScoreMultiplier(1), 5000); // Reset after 5s
                     break;
                 case 'SHIELD':
-                    // Implement shield logic here
+                    //   shield logic  
                     break;
             }
             createParticles(powerUp);
