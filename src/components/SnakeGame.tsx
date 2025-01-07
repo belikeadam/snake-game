@@ -6,9 +6,18 @@ type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 type Coordinate = { x: number; y: number };
 type PowerUpType = 'SPEED' | 'MULTIPLIER' | 'SHIELD';
 type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
+type Theme = 'CLASSIC' | 'NEON' | 'RETRO';
+type GridPattern = 'NONE' | 'DOTS' | 'LINES';
 
 interface PowerUp extends Coordinate {
   type: PowerUpType;
+}
+
+interface ThemeColors {
+  background: string;
+  snake: string;
+  food: string;
+  grid: string;
 }
 
 const INITIAL_GRID_SIZE = 20;
@@ -21,6 +30,27 @@ const DIFFICULTY_SETTINGS = {
   EASY: { speed: 200, multiplier: 1 },
   MEDIUM: { speed: 150, multiplier: 1.5 },
   HARD: { speed: 100, multiplier: 2 }
+};
+
+const THEME_COLORS: Record<Theme, ThemeColors> = {
+  CLASSIC: {
+    background: 'from-gray-900 to-gray-800',
+    snake: 'rgb(34, 197, 94)',
+    food: 'rgb(239, 68, 68)',
+    grid: 'rgb(75, 85, 99)'
+  },
+  NEON: {
+    background: 'from-purple-900 to-black',
+    snake: 'rgb(167, 139, 250)',
+    food: 'rgb(251, 146, 60)',
+    grid: 'rgb(139, 92, 246)'
+  },
+  RETRO: {
+    background: 'from-green-900 to-green-800',
+    snake: 'rgb(34, 197, 94)',
+    food: 'rgb(252, 211, 77)',
+    grid: 'rgb(6, 95, 70)'
+  }
 };
 
 export default function SnakeGame() {
@@ -38,6 +68,12 @@ export default function SnakeGame() {
     const [powerUp, setPowerUp] = useState<PowerUp | null>(null);
     const [scoreMultiplier, setScoreMultiplier] = useState(1);
     const [particles, setParticles] = useState<Coordinate[]>([]);
+    const [isPaused, setIsPaused] = useState(false);
+    const [currentTheme, setCurrentTheme] = useState<Theme>('CLASSIC');
+    const [gridPattern, setGridPattern] = useState<GridPattern>('NONE');
+    const [showTrail, setShowTrail] = useState(true);
+  
+    const themeColors = THEME_COLORS[currentTheme];
 
     const lastMoveTime = useRef(0);
     const animationFrameRef = useRef<number | null>(null);
@@ -86,7 +122,7 @@ export default function SnakeGame() {
     }, [score]);
 
     const moveSnake = useCallback((timestamp: number) => {
-        if (gameOver) return;
+        if (gameOver || isPaused) return;
 
         if (timestamp - lastMoveTime.current < gameSpeed) {
             animationFrameRef.current = requestAnimationFrame(moveSnake);
@@ -146,7 +182,7 @@ export default function SnakeGame() {
                     setTimeout(() => setScoreMultiplier(1), 5000); // Reset after 5s
                     break;
                 case 'SHIELD':
-                    //   shield logic  
+                    //   shield logic here
                     break;
             }
             createParticles(powerUp);
@@ -155,7 +191,7 @@ export default function SnakeGame() {
 
         setSnake(newSnake);
         animationFrameRef.current = requestAnimationFrame(moveSnake);
-    }, [snake, nextDirection, food, score, gameOver, generateFood, gridSize, gameSpeed, adjustGameDifficulty, difficulty, powerUp, scoreMultiplier]);
+    }, [snake, nextDirection, food, score, gameOver, generateFood, gridSize, gameSpeed, adjustGameDifficulty, difficulty, powerUp, scoreMultiplier, isPaused]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -172,6 +208,9 @@ export default function SnakeGame() {
                     break;
                 case 'ArrowRight':
                     if (direction !== 'LEFT') setNextDirection('RIGHT');
+                    break;
+                case ' ':  // Space bar
+                    setIsPaused(prev => !prev);
                     break;
             }
         };
@@ -204,8 +243,58 @@ export default function SnakeGame() {
         setParticles([]);
     };
 
+    const renderSnakeSegment = (segment: Coordinate, index: number) => (
+      <motion.div 
+        key={`${segment.x}-${segment.y}`}
+        initial={{ scale: 0.6, opacity: 0.7 }}
+        animate={{ 
+          scale: 1, 
+          opacity: showTrail ? 1 - (index * 0.05) : 1,
+          backgroundColor: index === 0 ? themeColors.snake : `${themeColors.snake}cc`
+        }}
+        exit={{ scale: 0, opacity: 0 }}
+        className="absolute rounded-md"
+        style={{
+          width: `${cellSize}px`,
+          height: `${cellSize}px`,
+          left: `${segment.x * cellSize}px`,
+          top: `${segment.y * cellSize}px`,
+        }}
+      />
+    );
+
+    const renderFood = () => (
+      <motion.div
+        key={`food-${food.x}-${food.y}`}
+        className="absolute"
+        style={{
+          width: `${cellSize}px`,
+          height: `${cellSize}px`,
+          left: `${food.x * cellSize}px`,
+          top: `${food.y * cellSize}px`,
+        }}
+      >
+        <motion.div
+          className={`w-full h-full rounded-full bg-${themeColors.food}`}
+          animate={{
+            scale: [1, 1.2, 1],
+            rotate: [0, 180, 360],
+            boxShadow: [
+              '0 0 0 0 rgba(239, 68, 68, 0.4)',
+              '0 0 0 10px rgba(239, 68, 68, 0)',
+            ],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </motion.div>
+    );
+
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4 touch-none select-none">
+        <div className={`flex flex-col items-center justify-center min-h-screen bg-gradient-to-br ${themeColors.background} p-4`}>
             <div className="text-center mb-6">
                 <motion.h1 initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-bold text-green-400 mb-2">Snake Game</motion.h1>
                 <div className="flex justify-center space-x-4 text-white">
@@ -214,24 +303,32 @@ export default function SnakeGame() {
                     <p>Speed: {Math.round(INITIAL_GAME_SPEED - gameSpeed)}</p>
                 </div>
             </div>
-            <div className="mb-4">
+            <div className="mb-4 flex space-x-4">
                 <select
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+                    value={currentTheme}
+                    onChange={(e) => setCurrentTheme(e.target.value as Theme)}
                     className="bg-gray-700 text-white p-2 rounded"
                 >
-                    <option value="EASY">Easy</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HARD">Hard</option>
+                    <option value="CLASSIC">Classic</option>
+                    <option value="NEON">Neon</option>
+                    <option value="RETRO">Retro</option>
+                </select>
+                
+                <select
+                    value={gridPattern}
+                    onChange={(e) => setGridPattern(e.target.value as GridPattern)}
+                    className="bg-gray-700 text-white p-2 rounded"
+                >
+                    <option value="NONE">No Grid</option>
+                    <option value="DOTS">Dots</option>
+                    <option value="LINES">Lines</option>
                 </select>
             </div>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 260, damping: 20 }} className="relative border-4 border-green-600 rounded-lg shadow-2xl overflow-hidden" style={{ width: `${gridSize * cellSize}px`, height: `${gridSize * cellSize}px` }}>
                 <AnimatePresence>
-                    {snake.map((segment, index) => (
-                        <motion.div key={`${segment.x}-${segment.y}`} initial={{ scale: 0.6, opacity: 0.7 }} animate={{ scale: 1, opacity: 1, backgroundColor: index === 0 ? 'rgb(34, 197, 94)' : 'rgb(22, 163, 74)' }} exit={{ scale: 0, opacity: 0 }} className="absolute rounded-md" style={{ width: `${cellSize}px`, height: `${cellSize}px`, left: `${segment.x * cellSize}px`, top: `${segment.y * cellSize}px` }} />
-                    ))}
+                    {snake.map((segment, index) => renderSnakeSegment(segment, index))}
                 </AnimatePresence>
-                <motion.div key={`${food.x}-${food.y}`} animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }} className="absolute bg-red-500 rounded-full" style={{ width: `${cellSize}px`, height: `${cellSize}px`, left: `${food.x * cellSize}px`, top: `${food.y * cellSize}px` }} />
+                {renderFood()}
                 {powerUp && (
                     <motion.div
                         key={`powerup-${powerUp.x}-${powerUp.y}`}
