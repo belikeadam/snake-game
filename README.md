@@ -11,7 +11,7 @@ README.md
 
 A modern interpretation of the classic Nokia Snake game built with React, TypeScript, and Framer Motion.
 
-<img src="public/assets/snake-game-preview.png" alt="Snake Game Preview" width="600"/>
+![Snake Game Preview](./screenshots/game-preview.png)
 
 ## 🎮 Features
 
