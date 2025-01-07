@@ -182,7 +182,7 @@ export default function SnakeGame() {
                     setTimeout(() => setScoreMultiplier(1), 5000); // Reset after 5s
                     break;
                 case 'SHIELD':
-                    //   shield logic here
+                    // Implement shield logic here
                     break;
             }
             createParticles(powerUp);
@@ -210,6 +210,7 @@ export default function SnakeGame() {
                     if (direction !== 'LEFT') setNextDirection('RIGHT');
                     break;
                 case ' ':  // Space bar
+                case 'Escape':  // ESC key
                     setIsPaused(prev => !prev);
                     break;
             }
@@ -293,6 +294,41 @@ export default function SnakeGame() {
       </motion.div>
     );
 
+    const renderPauseOverlay = () => (
+        <AnimatePresence>
+            {isPaused && (
+                <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50"
+                >
+                    <motion.div
+                        initial={{ scale: 0.5 }}
+                        animate={{ scale: 1 }}
+                        className="bg-gray-800 p-8 rounded-lg shadow-2xl text-center"
+                    >
+                        <h2 className="text-4xl text-white mb-6 font-bold">Paused</h2>
+                        <div className="space-y-4">
+                            <button
+                                onClick={() => setIsPaused(false)}
+                                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition w-full"
+                            >
+                                Resume
+                            </button>
+                            <button
+                                onClick={restartGame}
+                                className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition w-full"
+                            >
+                                Restart
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+
     return (
         <div className={`flex flex-col items-center justify-center min-h-screen bg-gradient-to-br ${themeColors.background} p-4`}>
             <div className="text-center mb-6">
@@ -366,6 +402,7 @@ export default function SnakeGame() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+                {renderPauseOverlay()}
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="mt-6 text-white text-sm text-center">Use Arrow Keys to Control the Snake</motion.div>
             <ArrowKeys />  
