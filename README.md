@@ -3,8 +3,7 @@
 
 A modern interpretation of the classic Nokia Snake game built with React, TypeScript, and Framer Motion.
 
-![Snake Game Preview](./screenshots/game-preview.png)
-
+![Snake Game Preview](/screenshots/game-preview.png)
 ## 🎮 Features
 
 - **Multiple Theme Options**: Choose between Classic, Neon, and Retro visual styles
