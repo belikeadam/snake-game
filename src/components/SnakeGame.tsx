@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ArrowKeys from './ArrowKeys'; // Add this import
 
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 type Coordinate = { x: number; y: number };
@@ -169,6 +170,7 @@ export default function SnakeGame() {
                 </AnimatePresence>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="mt-6 text-white text-sm text-center">Use Arrow Keys to Control the Snake</motion.div>
+            <ArrowKeys /> {/* Add ArrowKeys component here */}
         </div>
     );
 }
