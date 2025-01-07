@@ -1,10 +1,32 @@
-Collecting workspace information
+To ensure the image displays correctly on GitHub, follow these steps:
 
-Here's an enhanced 
+1. **Verify Image Path**: Ensure the image is correctly placed in the 
+
+screenshots
+
+ folder at the root of your repository.
+2. **Check Image File Name**: Ensure the file name is exactly `game-preview.png` and there are no typos.
+3. **Commit and Push**: Make sure both the image and the updated 
 
 README.md
 
- for the Snake Game project:
+ are committed and pushed to your repository.
+
+### Example Directory Structure
+```
+vite-react-game/
+├── snake-game/
+│   ├── screenshots/
+│   │   └── game-preview.png
+│   ├── src/
+│   ├── README.md
+│   └── ...
+```
+
+### Updated 
+
+README.md
+
 
 ```markdown
 # 🐍 Snake Game
@@ -102,5 +124,10 @@ Contributions are welcome! Feel free to:
 This project is open source and available under the MIT License.
 ```
 
-This README provides a comprehensive overview of your Snake Game implementation, highlighting its features, technical aspects, and how to get started. It's structured to help users understand both how to play the game and how to work with the codebase.
-This README provides a comprehensive overview of your Snake Game implementation, highlighting its features, technical aspects, and how to get started. It's structured to help users understand both how to play the game and how to work with the codebase.
+### Commit and Push Changes
+```bash
+git add screenshots/game-preview.png README.md
+git commit -m "Add game screenshot and update README"
+git push origin main
+```
+ 
