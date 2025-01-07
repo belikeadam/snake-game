@@ -4,12 +4,24 @@ import ArrowKeys from './ArrowKeys';
 
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 type Coordinate = { x: number; y: number };
+type PowerUpType = 'SPEED' | 'MULTIPLIER' | 'SHIELD';
+type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
+
+interface PowerUp extends Coordinate {
+  type: PowerUpType;
+}
 
 const INITIAL_GRID_SIZE = 20;
 const INITIAL_CELL_SIZE = 25;
 const INITIAL_GAME_SPEED = 200;
 const MAX_SPEED = 50;
 const SPEED_INCREMENT_INTERVAL = 3;
+
+const DIFFICULTY_SETTINGS = {
+  EASY: { speed: 200, multiplier: 1 },
+  MEDIUM: { speed: 150, multiplier: 1.5 },
+  HARD: { speed: 100, multiplier: 2 }
+};
 
 export default function SnakeGame() {
     const [snake, setSnake] = useState<Coordinate[]>([{ x: 10, y: 10 }]);
@@ -22,6 +34,10 @@ export default function SnakeGame() {
     const [gameSpeed, setGameSpeed] = useState(INITIAL_GAME_SPEED);
     const [gridSize, setGridSize] = useState(INITIAL_GRID_SIZE);
     const [cellSize, setCellSize] = useState(INITIAL_CELL_SIZE);
+    const [difficulty, setDifficulty] = useState<Difficulty>('MEDIUM');
+    const [powerUp, setPowerUp] = useState<PowerUp | null>(null);
+    const [scoreMultiplier, setScoreMultiplier] = useState(1);
+    const [particles, setParticles] = useState<Coordinate[]>([]);
 
     const lastMoveTime = useRef(0);
     const animationFrameRef = useRef<number | null>(null);
@@ -37,6 +53,27 @@ export default function SnakeGame() {
         } while (occupiedCells.has(`${newFood.x},${newFood.y}`));
         return newFood;
     }, [snake, gridSize]);
+
+    const generatePowerUp = useCallback(() => {
+        if (Math.random() > 0.8) { // 20% chance to spawn power-up
+            const types: PowerUpType[] = ['SPEED', 'MULTIPLIER', 'SHIELD'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const position = {
+                x: Math.floor(Math.random() * (gridSize - 2)) + 1,
+                y: Math.floor(Math.random() * (gridSize - 2)) + 1
+            };
+            setPowerUp({ ...position, type });
+        }
+    }, [gridSize]);
+
+    const createParticles = (position: Coordinate) => {
+        const newParticles = Array.from({ length: 8 }, () => ({
+            x: position.x + (Math.random() - 0.5) * 2,
+            y: position.y + (Math.random() - 0.5) * 2
+        }));
+        setParticles(newParticles);
+        setTimeout(() => setParticles([]), 500);
+    };
 
     const adjustGameDifficulty = useCallback(() => {
         if (score > 0 && score % SPEED_INCREMENT_INTERVAL === 0) {
@@ -87,17 +124,38 @@ export default function SnakeGame() {
         newSnake.unshift(head);
 
         if (head.x === food.x && head.y === food.y) {
-            const newScore = score + 1;
-            setScore(newScore);
+            const baseScore = 1;
+            const difficultyMultiplier = DIFFICULTY_SETTINGS[difficulty].multiplier;
+            const newScore = score + (baseScore * scoreMultiplier * difficultyMultiplier);
+            setScore(Math.floor(newScore));
             setFood(generateFood());
+            generatePowerUp();
             adjustGameDifficulty();
+            createParticles(food);
         } else {
             newSnake.pop();
         }
 
+        if (powerUp && head.x === powerUp.x && head.y === powerUp.y) {
+            switch (powerUp.type) {
+                case 'SPEED':
+                    setGameSpeed(prev => Math.max(prev - 30, MAX_SPEED));
+                    break;
+                case 'MULTIPLIER':
+                    setScoreMultiplier(prev => prev * 2);
+                    setTimeout(() => setScoreMultiplier(1), 5000); // Reset after 5s
+                    break;
+                case 'SHIELD':
+                    // Implement shield logic here
+                    break;
+            }
+            createParticles(powerUp);
+            setPowerUp(null);
+        }
+
         setSnake(newSnake);
         animationFrameRef.current = requestAnimationFrame(moveSnake);
-    }, [snake, nextDirection, food, score, gameOver, generateFood, gridSize, gameSpeed, adjustGameDifficulty]);
+    }, [snake, nextDirection, food, score, gameOver, generateFood, gridSize, gameSpeed, adjustGameDifficulty, difficulty, powerUp, scoreMultiplier]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -141,6 +199,9 @@ export default function SnakeGame() {
         setGameSpeed(INITIAL_GAME_SPEED);
         setGridSize(INITIAL_GRID_SIZE);
         setCellSize(INITIAL_CELL_SIZE);
+        setPowerUp(null);
+        setScoreMultiplier(1);
+        setParticles([]);
     };
 
     return (
@@ -153,6 +214,17 @@ export default function SnakeGame() {
                     <p>Speed: {Math.round(INITIAL_GAME_SPEED - gameSpeed)}</p>
                 </div>
             </div>
+            <div className="mb-4">
+                <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+                    className="bg-gray-700 text-white p-2 rounded"
+                >
+                    <option value="EASY">Easy</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HARD">Hard</option>
+                </select>
+            </div>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 260, damping: 20 }} className="relative border-4 border-green-600 rounded-lg shadow-2xl overflow-hidden" style={{ width: `${gridSize * cellSize}px`, height: `${gridSize * cellSize}px` }}>
                 <AnimatePresence>
                     {snake.map((segment, index) => (
@@ -160,6 +232,35 @@ export default function SnakeGame() {
                     ))}
                 </AnimatePresence>
                 <motion.div key={`${food.x}-${food.y}`} animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }} className="absolute bg-red-500 rounded-full" style={{ width: `${cellSize}px`, height: `${cellSize}px`, left: `${food.x * cellSize}px`, top: `${food.y * cellSize}px` }} />
+                {powerUp && (
+                    <motion.div
+                        key={`powerup-${powerUp.x}-${powerUp.y}`}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute rounded-full"
+                        style={{
+                            width: `${cellSize}px`,
+                            height: `${cellSize}px`,
+                            left: `${powerUp.x * cellSize}px`,
+                            top: `${powerUp.y * cellSize}px`,
+                            backgroundColor: powerUp.type === 'SPEED' ? 'yellow' :
+                                            powerUp.type === 'MULTIPLIER' ? 'purple' : 'blue'
+                        }}
+                    />
+                )}
+                {particles.map((particle, index) => (
+                    <motion.div
+                        key={`particle-${index}`}
+                        initial={{ scale: 1, opacity: 1 }}
+                        animate={{ scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="absolute bg-yellow-400 rounded-full w-2 h-2"
+                        style={{
+                            left: `${particle.x * cellSize}px`,
+                            top: `${particle.y * cellSize}px`
+                        }}
+                    />
+                ))}
                 <AnimatePresence>
                     {gameOver && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center">
