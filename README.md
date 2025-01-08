@@ -1,4 +1,4 @@
-# 🐍 Snake Game
+# 🐍 Snake Game using VITE React
 
 A modern interpretation of the classic Nokia Snake game built with React, TypeScript, and Framer Motion.
 
