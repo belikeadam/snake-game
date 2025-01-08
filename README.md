@@ -2,7 +2,10 @@
 
 A modern interpretation of the classic Nokia Snake game built with React, TypeScript, and Framer Motion.
 
-> 📸 Screenshot of the game:
+
+## 📸 Game Preview
+Below is a screenshot of the Snake Game in action, showcasing the modern interface and visual effects:
+
 ![Screenshot of Snake Game in action](https://i.imgur.com/z6r1p8k.png)
 
 ## 🎮 Features
