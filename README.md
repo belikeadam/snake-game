@@ -1,10 +1,8 @@
- 
 # 🐍 Snake Game
 
 A modern interpretation of the classic Nokia Snake game built with React, TypeScript, and Framer Motion.
 
-
-> 📸 Game Screenshot:
+> 📸 Screenshot of the game:
 ![Screenshot of Snake Game in action](https://i.imgur.com/z6r1p8k.png)
 
 ## 🎮 Features
@@ -44,55 +42,3 @@ A modern interpretation of the classic Nokia Snake game built with React, TypeSc
 1. Clone the repository:
 ```bash
 git clone https://github.com/belikeadam/snake-game.git
-```
-
-2. Install dependencies:
-```bash
-cd snake-game
-npm install
-```
-
-3. Start the development server:
-```bash
-npm run dev
-```
-
-4. Build for production:
-```bash
-npm run build
-```
-
-## 🎨 Customization
-
-- **Themes**: Switch between Classic, Neon, and Retro themes
-- **Grid Patterns**: Choose between None, Dots, or Lines
-- **Difficulty Levels**: Easy, Medium, or Hard modes
-- **Trail Effect**: Enable/disable snake trail visualization
-
-## 🎮 Controls
-
-- ⬆️ Arrow Up: Move Up
-- ⬇️ Arrow Down: Move Down
-- ⬅️ Arrow Left: Move Left
-- ➡️ Arrow Right: Move Right
-- Space/ESC: Pause Game
-
-## 📱 Progressive Web App
-
-This game is built as a PWA, allowing you to:
-- Install it on your device
-- Play offline
-- Get a native app-like experience
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-- Report bugs
-- Suggest new features
-- Submit pull requests
-
-## 📜 License
-
-This project is open source and available under the MIT License.
-```
- 
