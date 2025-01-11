@@ -8,6 +8,7 @@ type PowerUpType = 'SPEED' | 'MULTIPLIER' | 'SHIELD';
 type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
 type Theme = 'CLASSIC' | 'NEON' | 'RETRO';
 type GridPattern = 'NONE' | 'DOTS' | 'LINES';
+type FoodEmoji = '🍕' | '🍔' | '🍎' | '🍗' | '🍪' | '🍉';
 
 interface PowerUp extends Coordinate {
   type: PowerUpType;
@@ -53,6 +54,8 @@ const THEME_COLORS: Record<Theme, ThemeColors> = {
   }
 };
 
+const FOOD_EMOJIS: FoodEmoji[] = ['🍕', '🍔', '🍎', '🍗', '🍪', '🍉'];
+
 export default function SnakeGame() {
     const [snake, setSnake] = useState<Coordinate[]>([{ x: 10, y: 10 }]);
     const [food, setFood] = useState<Coordinate>({ x: 15, y: 15 });
@@ -72,6 +75,7 @@ export default function SnakeGame() {
     const [currentTheme, setCurrentTheme] = useState<Theme>('CLASSIC');
     const [gridPattern, setGridPattern] = useState<GridPattern>('NONE');
     const [showTrail, setShowTrail] = useState(true);
+    const [currentFood, setCurrentFood] = useState<FoodEmoji>('🍎');
   
     const themeColors = THEME_COLORS[currentTheme];
 
@@ -87,6 +91,9 @@ export default function SnakeGame() {
                 y: Math.floor(Math.random() * (gridSize - 2)) + 1
             };
         } while (occupiedCells.has(`${newFood.x},${newFood.y}`));
+        
+        // Set random food emoji
+        setCurrentFood(FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)]);
         return newFood;
     }, [snake, gridSize]);
 
@@ -265,33 +272,23 @@ export default function SnakeGame() {
     );
 
     const renderFood = () => (
-      <motion.div
-        key={`food-${food.x}-${food.y}`}
-        className="absolute"
-        style={{
-          width: `${cellSize}px`,
-          height: `${cellSize}px`,
-          left: `${food.x * cellSize}px`,
-          top: `${food.y * cellSize}px`,
-        }}
-      >
         <motion.div
-          className={`w-full h-full rounded-full bg-${themeColors.food}`}
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 360],
-            boxShadow: [
-              '0 0 0 0 rgba(239, 68, 68, 0.4)',
-              '0 0 0 10px rgba(239, 68, 68, 0)',
-            ],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </motion.div>
+            key={`food-${food.x}-${food.y}`}
+            className="absolute flex items-center justify-center"
+            style={{
+                width: `${cellSize}px`,
+                height: `${cellSize}px`,
+                left: `${food.x * cellSize}px`,
+                top: `${food.y * cellSize}px`,
+                fontSize: `${cellSize * 0.8}px`,
+            }}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            whileHover={{ scale: 1.1 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
+            {currentFood}
+        </motion.div>
     );
 
     const renderPauseOverlay = () => (
