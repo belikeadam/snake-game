@@ -250,26 +250,55 @@ export default function SnakeGame() {
         setScoreMultiplier(1);
         setParticles([]);
     };
-
-    const renderSnakeSegment = (segment: Coordinate, index: number) => (
-      <motion.div 
-        key={`${segment.x}-${segment.y}`}
-        initial={{ scale: 0.6, opacity: 0.7 }}
-        animate={{ 
-          scale: 1, 
-          opacity: showTrail ? 1 - (index * 0.05) : 1,
-          backgroundColor: index === 0 ? themeColors.snake : `${themeColors.snake}cc`
-        }}
-        exit={{ scale: 0, opacity: 0 }}
-        className="absolute rounded-md"
-        style={{
-          width: `${cellSize}px`,
-          height: `${cellSize}px`,
-          left: `${segment.x * cellSize}px`,
-          top: `${segment.y * cellSize}px`,
-        }}
-      />
-    );
+    const renderSnakeSegment = (segment: Coordinate, index: number) => {
+        const isHead = index === 0;
+        
+        return (
+          <motion.div 
+            key={`${segment.x}-${segment.y}`}
+            initial={{ scale: 0.8, opacity: 0.7 }}
+            animate={{ 
+              scale: isHead ? 1.1 : 1,
+              opacity: showTrail ? 1 - (index * 0.03) : 1,
+            }}
+            exit={{ scale: 0, opacity: 0 }}
+            className={`absolute rounded-xl ${isHead ? 'rounded-full' : 'rounded-lg'}`}
+            style={{
+              width: `${cellSize}px`,
+              height: `${cellSize}px`,
+              left: `${segment.x * cellSize}px`,
+              top: `${segment.y * cellSize}px`,
+              background: isHead 
+                ? themeColors.snake
+                : `linear-gradient(135deg, ${themeColors.snake}, ${themeColors.snake}88)`,
+              boxShadow: isHead 
+                ? `0 0 10px ${themeColors.snake}66`
+                : `0 0 5px ${themeColors.snake}44`,
+              border: isHead ? `2px solid ${themeColors.snake}dd` : 'none',
+              zIndex: isHead ? 2 : 1,
+            }}
+          >
+            {isHead && (
+              <>
+                <div className="absolute w-2 h-2 bg-white rounded-full" 
+                     style={{ 
+                       left: '25%', 
+                       top: '25%',
+                       boxShadow: '0 0 5px rgba(255,255,255,0.8)'
+                     }} 
+                />
+                <div className="absolute w-2 h-2 bg-white rounded-full"
+                     style={{ 
+                       right: '25%', 
+                       top: '25%',
+                       boxShadow: '0 0 5px rgba(255,255,255,0.8)'
+                     }}
+                />
+              </>
+            )}
+          </motion.div>
+        );
+      };
 
     const renderFood = () => (
         <motion.div
