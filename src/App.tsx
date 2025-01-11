@@ -1,15 +1,14 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import SnakeGame from './components/SnakeGame';
+import { HashRouter, Routes, Route } from 'react-router-dom'
+import SnakeGame from './components/SnakeGame'
 
-const App = () => {
+function App() {
   return (
-    <Router>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<SnakeGame />} />
       </Routes>
-    </Router>
-  );
-};
+    </HashRouter>
+  )
+}
 
-export default App;
+export default App
