@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-const ArrowKeys = () => {
+interface ArrowKeysProps {
+  onDirectionChange: (direction: string) => void;
+}
+
+const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
   const [pressedKey, setPressedKey] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         setPressedKey(e.key);
+        onDirectionChange(e.key);
       }
     };
 
@@ -22,7 +27,13 @@ const ArrowKeys = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [onDirectionChange]);
+
+  const handleArrowClick = (direction: string) => {
+    setPressedKey(direction);
+    onDirectionChange(direction);
+    setTimeout(() => setPressedKey(null), 150); // Reset visual feedback after 150ms
+  };
 
   const arrowButton = (direction: string, rotation: number) => (
     <motion.button
@@ -34,6 +45,9 @@ const ArrowKeys = () => {
         backgroundColor: pressedKey === direction ? '#22c55e' : '#374151'
       }}
       style={{ rotate: rotation }}
+      onClick={() => handleArrowClick(direction)}
+      onTouchStart={() => handleArrowClick(direction)}
+      whileTap={{ scale: 0.9 }}
     >
       <svg
         className="w-6 h-6 text-white"

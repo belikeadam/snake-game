@@ -56,6 +56,38 @@ const THEME_COLORS: Record<Theme, ThemeColors> = {
 
 const FOOD_EMOJIS: FoodEmoji[] = ['🍕', '🍔', '🍎', '🍗', '🍪', '🍉'];
 
+
+const GridOverlay = ({ pattern, size, cellSize, color }: { 
+    pattern: GridPattern; 
+    size: number; 
+    cellSize: number;
+    color: string;
+}) => {
+    if (pattern === 'NONE') return null;
+
+    const gridSize = size * cellSize;
+
+    return (
+        <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+                width: gridSize,
+                height: gridSize,
+                background: pattern === 'LINES' 
+                    ? `linear-gradient(to right, ${color}22 1px, transparent 1px),
+                       linear-gradient(to bottom, ${color}22 1px, transparent 1px)`
+                    : pattern === 'DOTS' 
+                    ? `radial-gradient(circle at center, ${color}44 1px, transparent 1px)`
+                    : 'none',
+                backgroundSize: pattern === 'LINES' 
+                    ? `${cellSize}px ${cellSize}px`
+                    : pattern === 'DOTS'
+                    ? `${cellSize}px ${cellSize}px`
+                    : '0 0'
+            }}
+        />
+    );
+};
 export default function SnakeGame() {
     const [snake, setSnake] = useState<Coordinate[]>([{ x: 10, y: 10 }]);
     const [food, setFood] = useState<Coordinate>({ x: 15, y: 15 });
@@ -81,6 +113,24 @@ export default function SnakeGame() {
 
     const lastMoveTime = useRef(0);
     const animationFrameRef = useRef<number | null>(null);
+
+    const handleDirectionChange = (newDirection: string) => {
+        switch (newDirection) {
+            case 'ArrowUp':
+                if (direction !== 'DOWN') setNextDirection('UP');
+                break;
+            case 'ArrowDown':
+                if (direction !== 'UP') setNextDirection('DOWN');
+                break;
+            case 'ArrowLeft':
+                if (direction !== 'RIGHT') setNextDirection('LEFT');
+                break;
+            case 'ArrowRight':
+                if (direction !== 'LEFT') setNextDirection('RIGHT');
+                break;
+        }
+    };
+
 
     const generateFood = useCallback(() => {
         const occupiedCells = new Set(snake.map(segment => `${segment.x},${segment.y}`));
@@ -431,7 +481,8 @@ export default function SnakeGame() {
                 {renderPauseOverlay()}
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="mt-6 text-white text-sm text-center">Use Arrow Keys to Control the Snake</motion.div>
-            <ArrowKeys />  
+            <ArrowKeys onDirectionChange={handleDirectionChange} />
+
         </div>
     );
 }
