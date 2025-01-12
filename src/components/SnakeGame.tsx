@@ -386,23 +386,24 @@ const SnakeGame: React.FC = () => {
   }, [direction, moveSnake]);
 
   return (
-    <div className={`flex flex-col items-center justify-center min-h-screen bg-gradient-to-br ${themeColors.background} p-2 sm:p-4 overflow-hidden`}>
-      <div className="text-center mb-4 sm:mb-6">
-        <motion.h1
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-2xl sm:text-3xl font-bold text-green-400 mb-2"
-        >
-          Snake Game
-        </motion.h1>
-        <div className="flex justify-center space-x-2 sm:space-x-4 text-white text-sm sm:text-base">
-          <p>Score: {score}</p>
-          <p>High Score: {highScore}</p>
-          <p>Speed: {Math.round(INITIAL_GAME_SPEED - gameSpeed)}</p>
-        </div>
-      </div>
+<div className={`flex flex-col items-center justify-start min-h-screen bg-gradient-to-br ${themeColors.background} p-2 sm:p-4 overflow-hidden`}>
+  {/* Reduce top margin on mobile */}
+  <div className="text-center mb-2 sm:mb-4">
+    <motion.h1
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="text-xl sm:text-3xl font-bold text-green-400 mb-1 sm:mb-2"
+    >
+      Snake Game
+      </motion.h1>
+    <div className="flex justify-center space-x-2 sm:space-x-4 text-white text-xs sm:text-base">
+      <p>Score: {score}</p>
+      <p>High Score: {highScore}</p>
+      <p>Speed: {Math.round(INITIAL_GAME_SPEED - gameSpeed)}</p>
+    </div>
+  </div>
 
-      <div className="mb-2 sm:mb-4 flex space-x-2 sm:space-x-4">
+  <div className="mb-2 sm:mb-4 flex space-x-1 sm:space-x-4">
         <button
           onClick={restartGame}
           className="bg-green-600 hover:bg-green-700 text-white p-1 sm:p-2 rounded text-sm sm:text-base"
@@ -439,7 +440,7 @@ const SnakeGame: React.FC = () => {
           width: `${gridSize * cellSize}px`,
           height: `${gridSize * cellSize}px`,
           maxWidth: '95vw',
-          maxHeight: '60vh'
+          maxHeight: '50vh'
         }}
       >
         <AnimatePresence>
@@ -471,8 +472,8 @@ const SnakeGame: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mt-2 sm:mt-4 text-white text-xs sm:text-sm text-center relative group"
-      >
+        className="mb-2 text-white text-xs sm:text-sm text-center relative group"
+        >
         <div className="cursor-help flex items-center justify-center gap-2">
           <span>Game Controls</span>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -514,8 +515,8 @@ const SnakeGame: React.FC = () => {
         Use Arrow Keys to Control the Snake
       </motion.div>
 
-      <div className="mt-2 sm:mt-4 w-full max-w-sm">
-        <ArrowKeys onDirectionChange={handleDirectionChange} />
+      <div className="w-full max-w-sm">
+                <ArrowKeys onDirectionChange={handleDirectionChange} />
       </div>
     </div>
   );

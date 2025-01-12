@@ -85,8 +85,8 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-4 inset-x-0 flex justify-between px-4 sm:px-8 max-w-3xl mx-auto select-none touch-none"
-    >
+      className="flex justify-between px-4 sm:px-8 max-w-3xl mx-auto select-none touch-none"
+      >
       {/* Left Controls */}
       <div className="relative w-48 h-48">
         <div className="absolute top-0 left-1/2 -translate-x-1/2">
