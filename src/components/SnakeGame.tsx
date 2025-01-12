@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ArrowKeys from './ArrowKeys';
+import GameGrid from './GameGrid';
+
 
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 type Coordinate = { x: number; y: number };
@@ -463,20 +465,26 @@ useEffect(() => {
       </div>
 
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="relative border-4 border-green-600 rounded-lg shadow-2xl overflow-hidden mx-auto"
-        style={{
-          width: `${gridSize * cellSize}px`,
-          height: `${gridSize * cellSize}px`,
-          maxWidth: '95vw',
-          maxHeight: '50vh'
-        }}
-      >
-        <AnimatePresence>
-          {snake.map((segment, index) => renderSnakeSegment(segment, index))}
-        </AnimatePresence>
+  initial={{ scale: 0.9, opacity: 0 }}
+  animate={{ scale: 1, opacity: 1 }}
+  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+  className="relative border-4 border-green-600 rounded-lg shadow-2xl overflow-hidden mx-auto"
+  style={{
+    width: `${gridSize * cellSize}px`,
+    height: `${gridSize * cellSize}px`,
+    maxWidth: '95vw',
+    maxHeight: '50vh'
+  }}
+>
+  <GameGrid
+    pattern={gridPattern}
+    gridSize={gridSize}
+    cellSize={cellSize}
+    color={themeColors.grid}
+  />
+  <AnimatePresence>
+    {snake.map((segment, index) => renderSnakeSegment(segment, index))}
+  </AnimatePresence>
         {renderFood()}
         {powerUp && (
           <motion.div
