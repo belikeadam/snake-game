@@ -48,9 +48,10 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
 
   const arrowButton = (direction: string, rotation: number) => (
     <motion.button
-      className={`w-12 h-12 rounded-lg border-2 ${
+      className={`w-16 h-16 rounded-lg border-2 ${
         pressedKey === direction ? 'bg-green-500 border-green-600' : 'bg-gray-700 border-gray-600'
-      } flex items-center justify-center transform active:scale-95 transition-transform duration-50`}
+      } flex items-center justify-center transform active:scale-95 transition-transform duration-50 
+      shadow-lg active:shadow-sm`}
       animate={{
         scale: pressedKey === direction ? 0.9 : 1,
         backgroundColor: pressedKey === direction ? '#22c55e' : '#374151'
@@ -65,7 +66,7 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
     >
       <svg
-        className="w-6 h-6 text-white transform transition-transform duration-50"
+        className="w-8 h-8 text-white transform transition-transform duration-50"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -84,18 +85,26 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex justify-between w-full max-w-[600px] px-8 mt-8 select-none touch-none"
+      className="fixed bottom-4 inset-x-0 flex justify-between px-4 sm:px-8 max-w-3xl mx-auto select-none touch-none"
     >
       {/* Left Controls */}
-      <div className="flex flex-col items-center space-y-4">
-        {arrowButton('ArrowUp', 0)}
-        {arrowButton('ArrowLeft', -90)}
+      <div className="relative w-48 h-48">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2">
+          {arrowButton('ArrowUp', 0)}
+        </div>
+        <div className="absolute left-0 top-1/2 -translate-y-1/2">
+          {arrowButton('ArrowLeft', -90)}
+        </div>
       </div>
 
       {/* Right Controls */}
-      <div className="flex flex-col items-center space-y-4">
-        {arrowButton('ArrowRight', 90)}
-        {arrowButton('ArrowDown', 180)}
+      <div className="relative w-48 h-48">
+        <div className="absolute right-0 top-1/2 -translate-y-1/2">
+          {arrowButton('ArrowRight', 90)}
+        </div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
+          {arrowButton('ArrowDown', 180)}
+        </div>
       </div>
     </motion.div>
   );

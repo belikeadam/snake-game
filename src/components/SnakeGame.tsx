@@ -296,7 +296,37 @@ const SnakeGame: React.FC = () => {
       </motion.div>
     );
   };
-
+  const renderGameOverOverlay = () => {
+    if (!gameOver) return null;
+  
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center"
+      >
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="bg-gray-800 p-6 rounded-lg border-2 border-red-500 text-center"
+        >
+          <h2 className="text-red-500 text-3xl font-bold mb-4">Game Over!</h2>
+          <div className="text-white space-y-2 mb-6">
+            <p className="text-xl">Final Score: {score}</p>
+            <p className="text-lg">High Score: {highScore}</p>
+          </div>
+          <button
+            onClick={restartGame}
+            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg text-lg font-semibold 
+                     transform transition-transform duration-200 hover:scale-105"
+          >
+            Play Again
+          </button>
+        </motion.div>
+      </motion.div>
+    );
+  };
+  
   const restartGame = () => {
     setSnake([{ x: 10, y: 10 }]);
     setFood(generateFood());
@@ -433,6 +463,8 @@ const SnakeGame: React.FC = () => {
           />
         )}
         {renderPauseOverlay()}
+        {renderGameOverOverlay()}  
+
       </motion.div>
 
    
