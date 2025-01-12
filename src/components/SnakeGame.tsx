@@ -26,16 +26,16 @@ const MAX_CELL_SIZE = 25; // Maximum cell size for larger screens
 
 const INITIAL_GRID_SIZE = 20;
 const INITIAL_CELL_SIZE = 25;
-const INITIAL_GAME_SPEED = 120;
-const MAX_SPEED = 30;
-const SPEED_INCREMENT_INTERVAL = 3;
+const INITIAL_GAME_SPEED = 200;
+const MAX_SPEED = 80;
+const SPEED_INCREMENT_INTERVAL = 5;
 const FRAME_CHECK_MULTIPLIER = 0.4;  
 
 
 const DIFFICULTY_SETTINGS = {
-  EASY: { speed: 150, multiplier: 1 },
-  MEDIUM: { speed: 120, multiplier: 1.5 },
-  HARD: { speed: 80, multiplier: 2 }
+  EASY: { speed: 250, multiplier: 1 },
+  MEDIUM: { speed: 200, multiplier: 1.5 },
+  HARD: { speed: 150, multiplier: 2 }
 };
 
 const THEME_COLORS: Record<Theme, ThemeColors> = {
@@ -177,18 +177,15 @@ useEffect(() => {
 
   const adjustGameDifficulty = useCallback(() => {
     if (score > 0 && score % SPEED_INCREMENT_INTERVAL === 0) {
-      setGameSpeed(prev => Math.max(prev - 20, MAX_SPEED));
-      if (score % 6 === 0) {
-        setGameDimensions(prev => ({ ...prev, gridSize: Math.min(prev.gridSize + 2, 30) }));
-        setGameDimensions(calculateGameDimensions());
-      }
+      setGameSpeed(prev => Math.max(prev - 10, MAX_SPEED)); // Smaller speed decrease (was -20)
+ 
     }
   }, [score]);
+
   const moveSnake = useCallback((timestamp: number) => {
     if (gameOver || isPaused) return;
     
     const elapsed = timestamp - lastMoveTime.current;
-    // Faster frame checks
     if (elapsed < gameSpeed * FRAME_CHECK_MULTIPLIER) {
       animationFrameRef.current = requestAnimationFrame(moveSnake);
       return;
@@ -199,20 +196,32 @@ useEffect(() => {
     const newSnake = [...snake];
     const head = { ...newSnake[0] };
     
-    // Immediate direction processing
     const currentDirection = movementQueue.length > 0 ? movementQueue[0] : nextDirection;
     if (movementQueue.length > 0) {
       setMovementQueue(prev => prev.slice(1));
       setDirection(currentDirection);
     }
   
-    // Optimized head position update
+    // Update head position with boundary checks
     switch (currentDirection) {
-      case 'UP': head.y = (head.y - 1 + gridSize) % gridSize; break;
-      case 'DOWN': head.y = (head.y + 1) % gridSize; break;
-      case 'LEFT': head.x = (head.x - 1 + gridSize) % gridSize; break;
-      case 'RIGHT': head.x = (head.x + 1) % gridSize; break;
+      case 'UP':
+        head.y = head.y - 1;
+        if (head.y < 0) head.y = gridSize - 1;
+        break;
+      case 'DOWN':
+        head.y = head.y + 1;
+        if (head.y >= gridSize) head.y = 0;
+        break;
+      case 'LEFT':
+        head.x = head.x - 1;
+        if (head.x < 0) head.x = gridSize - 1;
+        break;
+      case 'RIGHT':
+        head.x = head.x + 1;
+        if (head.x >= gridSize) head.x = 0;
+        break;
     }
+  
   
     const selfCollision = newSnake.some(segment => segment.x === head.x && segment.y === head.y);
     if (selfCollision) {
