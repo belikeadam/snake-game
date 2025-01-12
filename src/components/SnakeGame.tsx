@@ -297,6 +297,19 @@ const SnakeGame: React.FC = () => {
     );
   };
 
+  const restartGame = () => {
+    setSnake([{ x: 10, y: 10 }]);
+    setFood(generateFood());
+    setDirection('RIGHT');
+    setNextDirection('RIGHT');
+    setGameOver(false);
+    setScore(0);
+    setGameSpeed(INITIAL_GAME_SPEED);
+    setPowerUp(null);
+    setScoreMultiplier(1);
+    setIsPaused(false);
+  };
+
   useEffect(() => {
     const handleResize = () => {
       setGameDimensions(calculateGameDimensions());
@@ -360,6 +373,12 @@ const SnakeGame: React.FC = () => {
       </div>
 
       <div className="mb-2 sm:mb-4 flex space-x-2 sm:space-x-4">
+        <button
+          onClick={restartGame}
+          className="bg-green-600 hover:bg-green-700 text-white p-1 sm:p-2 rounded text-sm sm:text-base"
+        >
+          Restart Game
+        </button>
         <select
           value={currentTheme}
           onChange={(e) => setCurrentTheme(e.target.value as Theme)}
@@ -416,13 +435,53 @@ const SnakeGame: React.FC = () => {
         {renderPauseOverlay()}
       </motion.div>
 
+   
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mt-2 sm:mt-4 text-white text-xs sm:text-sm text-center relative group"
+      >
+        <div className="cursor-help flex items-center justify-center gap-2">
+          <span>Game Controls</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+        </div>
+        
+        <div className="invisible group-hover:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-4 w-72 
+                      bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-lg text-left border border-gray-600">
+          <h3 className="font-bold mb-2 text-green-400">How to Play:</h3>
+          <ul className="space-y-2">
+            <li className="flex items-center gap-2">
+              <span className="bg-gray-700 px-2 py-1 rounded">←↑↓→</span>
+              <span>Use arrow keys to change direction</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="bg-gray-700 px-2 py-1 rounded">Space</span>
+              <span>Pause/Resume game</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="bg-gray-700 px-2 py-1 rounded">ESC</span>
+              <span>Pause game</span>
+            </li>
+            <li className="mt-2">
+              <span className="text-yellow-400">🟡</span> Speed boost
+              <span className="text-purple-400 ml-4">🟣</span> Score multiplier
+              <span className="text-blue-400 ml-4">🔵</span> Shield
+            </li>
+          </ul>
+        </div>
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         className="mt-2 sm:mt-4 text-white text-xs sm:text-sm text-center"
+        title="You can also use keyboard arrow keys to control the snake"
       >
         Use Arrow Keys to Control the Snake
       </motion.div>
+
       <div className="mt-2 sm:mt-4 w-full max-w-sm">
         <ArrowKeys onDirectionChange={handleDirectionChange} />
       </div>
