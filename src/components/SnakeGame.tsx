@@ -26,14 +26,16 @@ const MAX_CELL_SIZE = 25; // Maximum cell size for larger screens
 
 const INITIAL_GRID_SIZE = 20;
 const INITIAL_CELL_SIZE = 25;
-const INITIAL_GAME_SPEED = 150;
-const MAX_SPEED = 40;
+const INITIAL_GAME_SPEED = 120;
+const MAX_SPEED = 30;
 const SPEED_INCREMENT_INTERVAL = 3;
+const FRAME_CHECK_MULTIPLIER = 0.4;  
+
 
 const DIFFICULTY_SETTINGS = {
-  EASY: { speed: 200, multiplier: 1 },
-  MEDIUM: { speed: 150, multiplier: 1.5 },
-  HARD: { speed: 100, multiplier: 2 }
+  EASY: { speed: 150, multiplier: 1 },
+  MEDIUM: { speed: 120, multiplier: 1.5 },
+  HARD: { speed: 80, multiplier: 2 }
 };
 
 const THEME_COLORS: Record<Theme, ThemeColors> = {
@@ -109,23 +111,16 @@ const SnakeGame: React.FC = () => {
 
   
   const handleDirectionChange = useCallback((newDirection: string) => {
+    const nextDir = newDirection.replace('Arrow', '').toUpperCase() as Direction;
     const isValidMove = (current: Direction, next: Direction): boolean => {
-      const opposites = {
-        UP: 'DOWN',
-        DOWN: 'UP',
-        LEFT: 'RIGHT',
-        RIGHT: 'LEFT'
-      };
-      return opposites[current] !== next;
+      return {UP: 'DOWN', DOWN: 'UP', LEFT: 'RIGHT', RIGHT: 'LEFT'}[current] !== next;
     };
   
-    const nextDir = newDirection.replace('Arrow', '').toUpperCase() as Direction;
     if (isValidMove(direction, nextDir)) {
-      setMovementQueue(prev => [nextDir]); // Only keep latest input
-      setNextDirection(nextDir); // Set next direction immediately
+      setNextDirection(nextDir);
+      setMovementQueue(prev => prev.length < 2 ? [...prev, nextDir] : prev);
     }
   }, [direction]);
-
 
 useEffect(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -189,12 +184,12 @@ useEffect(() => {
       }
     }
   }, [score]);
-
   const moveSnake = useCallback((timestamp: number) => {
     if (gameOver || isPaused) return;
     
     const elapsed = timestamp - lastMoveTime.current;
-    if (elapsed < gameSpeed * 0.6) { // Reduced threshold for faster response
+    // Faster frame checks
+    if (elapsed < gameSpeed * FRAME_CHECK_MULTIPLIER) {
       animationFrameRef.current = requestAnimationFrame(moveSnake);
       return;
     }
@@ -204,28 +199,19 @@ useEffect(() => {
     const newSnake = [...snake];
     const head = { ...newSnake[0] };
     
-    // Process movement queue immediately
-    let currentDirection = nextDirection;
+    // Immediate direction processing
+    const currentDirection = movementQueue.length > 0 ? movementQueue[0] : nextDirection;
     if (movementQueue.length > 0) {
-      currentDirection = movementQueue[0];
       setMovementQueue(prev => prev.slice(1));
       setDirection(currentDirection);
     }
   
-    // Update head position immediately
+    // Optimized head position update
     switch (currentDirection) {
-      case 'UP':
-        head.y = (head.y - 1 + gridSize) % gridSize;
-        break;
-      case 'DOWN':
-        head.y = (head.y + 1) % gridSize;
-        break;
-      case 'LEFT':
-        head.x = (head.x - 1 + gridSize) % gridSize;
-        break;
-      case 'RIGHT':
-        head.x = (head.x + 1) % gridSize;
-        break;
+      case 'UP': head.y = (head.y - 1 + gridSize) % gridSize; break;
+      case 'DOWN': head.y = (head.y + 1) % gridSize; break;
+      case 'LEFT': head.x = (head.x - 1 + gridSize) % gridSize; break;
+      case 'RIGHT': head.x = (head.x + 1) % gridSize; break;
     }
   
     const selfCollision = newSnake.some(segment => segment.x === head.x && segment.y === head.y);

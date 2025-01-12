@@ -8,45 +8,22 @@ interface ArrowKeysProps {
 const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
 
- const handleArrowClick = useCallback((direction: string) => {
-  setPressedKeys(prev => new Set([...prev, direction]));
-  onDirectionChange(direction); // Immediate direction change
-  
-  if (navigator.vibrate) {
-    navigator.vibrate(10); // Shorter vibration
-  }
-}, [onDirectionChange]);
+  const handleArrowClick = useCallback((direction: string) => {
+    setPressedKeys(prev => new Set([...prev, direction]));
+    onDirectionChange(direction);
+    if (navigator.vibrate) navigator.vibrate(5);
+  }, [onDirectionChange]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
-        setPressedKeys(prev => {
-          const next = new Set(prev);
-          next.add(e.key);
-          return next;
-        });
         onDirectionChange(e.key);
       }
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        setPressedKeys(prev => {
-          const next = new Set(prev);
-          next.delete(e.key);
-          return next;
-        });
-      }
-    };
-
     window.addEventListener('keydown', handleKeyDown, { passive: false });
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onDirectionChange]);
 
   const arrowButton = (direction: string, rotation: number) => (
