@@ -84,17 +84,19 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="grid grid-cols-3 gap-2 mt-8 select-none touch-none"
+      className="flex justify-between w-full max-w-[600px] px-8 mt-8 select-none touch-none"
     >
-      <div></div>
-      {arrowButton('ArrowUp', 0)}
-      <div></div>
-      {arrowButton('ArrowLeft', -90)}
-      <div className="w-12 h-12"></div>
-      {arrowButton('ArrowRight', 90)}
-      <div></div>
-      {arrowButton('ArrowDown', 180)}
-      <div></div>
+      {/* Left Controls */}
+      <div className="flex flex-col items-center space-y-4">
+        {arrowButton('ArrowUp', 0)}
+        {arrowButton('ArrowLeft', -90)}
+      </div>
+
+      {/* Right Controls */}
+      <div className="flex flex-col items-center space-y-4">
+        {arrowButton('ArrowRight', 90)}
+        {arrowButton('ArrowDown', 180)}
+      </div>
     </motion.div>
   );
 };
