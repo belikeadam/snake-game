@@ -26,8 +26,8 @@ const MAX_CELL_SIZE = 25; // Maximum cell size for larger screens
 
 const INITIAL_GRID_SIZE = 20;
 const INITIAL_CELL_SIZE = 25;
-const INITIAL_GAME_SPEED = 200;
-const MAX_SPEED = 50;
+const INITIAL_GAME_SPEED = 150;
+const MAX_SPEED = 40;
 const SPEED_INCREMENT_INTERVAL = 3;
 
 const DIFFICULTY_SETTINGS = {
@@ -62,10 +62,13 @@ const FOOD_EMOJIS: FoodEmoji[] = ['🍕', '🍔', '🍎', '🍗', '🍪', '🍉'
 const calculateGameDimensions = () => {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
+  const isMobile = viewportWidth < 640; // SM breakpoint in Tailwind
 
-  // Calculate cell size based on viewport
-  let dynamicCellSize = Math.floor(Math.min(viewportWidth / (INITIAL_GRID_SIZE + 4),
-    viewportHeight / (INITIAL_GRID_SIZE + 10)));
+  // Calculate cell size based on viewport and leave space for controls
+  let dynamicCellSize = Math.floor(Math.min(
+    viewportWidth / (INITIAL_GRID_SIZE + 4),
+    (viewportHeight * (isMobile ? 0.45 : 0.6)) / INITIAL_GRID_SIZE // Use less height on mobile
+  ));
 
   // Constrain cell size
   dynamicCellSize = Math.min(Math.max(dynamicCellSize, MIN_CELL_SIZE), MAX_CELL_SIZE);
@@ -102,23 +105,45 @@ const SnakeGame: React.FC = () => {
   const lastMoveTime = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
 
-  const handleDirectionChange = (newDirection: string) => {
-    switch (newDirection) {
-      case 'ArrowUp':
-        if (direction !== 'DOWN') setNextDirection('UP');
-        break;
-      case 'ArrowDown':
-        if (direction !== 'UP') setNextDirection('DOWN');
-        break;
-      case 'ArrowLeft':
-        if (direction !== 'RIGHT') setNextDirection('LEFT');
-        break;
-      case 'ArrowRight':
-        if (direction !== 'LEFT') setNextDirection('RIGHT');
-        break;
+  const [movementQueue, setMovementQueue] = useState<Direction[]>([]);
+
+  
+  const handleDirectionChange = useCallback((newDirection: string) => {
+    const isValidMove = (current: Direction, next: Direction): boolean => {
+      const opposites = {
+        UP: 'DOWN',
+        DOWN: 'UP',
+        LEFT: 'RIGHT',
+        RIGHT: 'LEFT'
+      };
+      return opposites[current] !== next;
+    };
+  
+    const nextDir = newDirection.replace('Arrow', '').toUpperCase() as Direction;
+    if (isValidMove(direction, nextDir)) {
+      setMovementQueue(prev => [nextDir]); // Only keep latest input
+      setNextDirection(nextDir); // Set next direction immediately
+    }
+  }, [direction]);
+
+
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
+      handleDirectionChange(e.key);
+    }
+    if (e.key === ' ' || e.key === 'Escape') {
+      setIsPaused(prev => !prev);
     }
   };
 
+  document.addEventListener('keydown', handleKeyDown);
+  
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+  };
+}, [handleDirectionChange]);
   const generateFood = useCallback(() => {
     const occupiedCells = new Set(snake.map(segment => `${segment.x},${segment.y}`));
     let newFood;
@@ -167,18 +192,27 @@ const SnakeGame: React.FC = () => {
 
   const moveSnake = useCallback((timestamp: number) => {
     if (gameOver || isPaused) return;
-
-    if (timestamp - lastMoveTime.current < gameSpeed) {
+    
+    const elapsed = timestamp - lastMoveTime.current;
+    if (elapsed < gameSpeed * 0.6) { // Reduced threshold for faster response
       animationFrameRef.current = requestAnimationFrame(moveSnake);
       return;
     }
+  
     lastMoveTime.current = timestamp;
-
+    
     const newSnake = [...snake];
     const head = { ...newSnake[0] };
-    const currentDirection = nextDirection;
-    setDirection(currentDirection);
-
+    
+    // Process movement queue immediately
+    let currentDirection = nextDirection;
+    if (movementQueue.length > 0) {
+      currentDirection = movementQueue[0];
+      setMovementQueue(prev => prev.slice(1));
+      setDirection(currentDirection);
+    }
+  
+    // Update head position immediately
     switch (currentDirection) {
       case 'UP':
         head.y = (head.y - 1 + gridSize) % gridSize;
@@ -193,7 +227,7 @@ const SnakeGame: React.FC = () => {
         head.x = (head.x + 1) % gridSize;
         break;
     }
-
+  
     const selfCollision = newSnake.some(segment => segment.x === head.x && segment.y === head.y);
     if (selfCollision) {
       setGameOver(true);
@@ -235,8 +269,7 @@ const SnakeGame: React.FC = () => {
 
     setSnake(newSnake);
     animationFrameRef.current = requestAnimationFrame(moveSnake);
-  }, [snake, nextDirection, food, score, gameOver, generateFood, gridSize, gameSpeed, adjustGameDifficulty, difficulty, powerUp, scoreMultiplier, isPaused]);
-
+  }, [snake, nextDirection, movementQueue, food, score, gameOver, generateFood, gridSize, gameSpeed, adjustGameDifficulty, difficulty, powerUp, scoreMultiplier, isPaused]);
   const renderSnakeSegment = (segment: Coordinate, index: number) => {
     return (
       <motion.div
@@ -350,41 +383,44 @@ const SnakeGame: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const pressedKeys = new Set<string>();
+  
     const handleKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
-      switch (e.key) {
-        case 'ArrowUp':
-          if (direction !== 'DOWN') setNextDirection('UP');
-          break;
-        case 'ArrowDown':
-          if (direction !== 'UP') setNextDirection('DOWN');
-          break;
-        case 'ArrowLeft':
-          if (direction !== 'RIGHT') setNextDirection('LEFT');
-          break;
-        case 'ArrowRight':
-          if (direction !== 'LEFT') setNextDirection('RIGHT');
-          break;
-        case ' ':  // Space bar
-        case 'Escape':  // ESC key
-          setIsPaused(prev => !prev);
-          break;
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        pressedKeys.add(e.key);
+        handleDirectionChange(e.key);
+      }
+      if (e.key === ' ' || e.key === 'Escape') {
+        setIsPaused(prev => !prev);
       }
     };
-
+  
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        pressedKeys.delete(e.key);
+        // Handle the last pressed key that's still down
+        const lastKey = Array.from(pressedKeys).pop();
+        if (lastKey) {
+          handleDirectionChange(lastKey);
+        }
+      }
+    };
+  
     document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
     document.body.style.overflow = 'hidden';
     animationFrameRef.current = requestAnimationFrame(moveSnake);
-
+  
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
       document.body.style.overflow = 'auto';
     };
   }, [direction, moveSnake]);
-
   return (
 <div className={`flex flex-col items-center justify-start min-h-screen bg-gradient-to-br ${themeColors.background} p-2 sm:p-4 overflow-hidden`}>
   {/* Reduce top margin on mobile */}
@@ -515,9 +551,9 @@ const SnakeGame: React.FC = () => {
         Use Arrow Keys to Control the Snake
       </motion.div>
 
-      <div className="w-full max-w-sm">
-                <ArrowKeys onDirectionChange={handleDirectionChange} />
-      </div>
+      <div className="fixed bottom-0 left-0 right-0 w-full">
+    <ArrowKeys onDirectionChange={handleDirectionChange} />
+  </div>
     </div>
   );
 };

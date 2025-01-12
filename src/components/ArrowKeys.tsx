@@ -6,55 +6,58 @@ interface ArrowKeysProps {
 }
 
 const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
-  const [pressedKey, setPressedKey] = useState<string | null>(null);
-  const [lastTouchTime, setLastTouchTime] = useState(0);
+  const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
 
-  const handleArrowClick = useCallback((direction: string) => {
-    const now = Date.now();
-    if (now - lastTouchTime < 100) return; // Prevent double touches
-    
-    setPressedKey(direction);
-    onDirectionChange(direction);
-    setLastTouchTime(now);
-
-    // Haptic feedback if supported
-    if (navigator.vibrate) {
-      navigator.vibrate(50);
-    }
-
-    setTimeout(() => setPressedKey(null), 100); // Faster reset for better responsiveness
-  }, [lastTouchTime, onDirectionChange]);
+ const handleArrowClick = useCallback((direction: string) => {
+  setPressedKeys(prev => new Set([...prev, direction]));
+  onDirectionChange(direction); // Immediate direction change
+  
+  if (navigator.vibrate) {
+    navigator.vibrate(10); // Shorter vibration
+  }
+}, [onDirectionChange]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
-        handleArrowClick(e.key);
+        setPressedKeys(prev => {
+          const next = new Set(prev);
+          next.add(e.key);
+          return next;
+        });
+        onDirectionChange(e.key);
       }
     };
 
-    const handleTouchEnd = () => {
-      setPressedKey(null);
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        setPressedKeys(prev => {
+          const next = new Set(prev);
+          next.delete(e.key);
+          return next;
+        });
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('keyup', handleKeyUp);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [handleArrowClick]);
+  }, [onDirectionChange]);
 
   const arrowButton = (direction: string, rotation: number) => (
     <motion.button
-      className={`w-16 h-16 rounded-lg border-2 ${
-        pressedKey === direction ? 'bg-green-500 border-green-600' : 'bg-gray-700 border-gray-600'
-      } flex items-center justify-center transform active:scale-95 transition-transform duration-50 
-      shadow-lg active:shadow-sm`}
+      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-lg border-2 ${
+        pressedKeys.has(direction) ? 'bg-green-500 border-green-600' : 'bg-gray-700 border-gray-600'
+      } flex items-center justify-center transform active:scale-95 transition-all duration-50 
+      shadow-lg active:shadow-sm touch-none`}
       animate={{
-        scale: pressedKey === direction ? 0.9 : 1,
-        backgroundColor: pressedKey === direction ? '#22c55e' : '#374151'
+        scale: pressedKeys.has(direction) ? 0.95 : 1,
+        backgroundColor: pressedKeys.has(direction) ? '#22c55e' : '#374151'
       }}
       style={{ rotate: rotation }}
       onClick={() => handleArrowClick(direction)}
@@ -63,10 +66,10 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
         handleArrowClick(direction);
       }}
       whileTap={{ scale: 0.9 }}
-      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+      transition={{ type: "spring", stiffness: 700, damping: 15 }} // Faster animation
     >
       <svg
-        className="w-8 h-8 text-white transform transition-transform duration-50"
+        className="w-6 h-6 sm:w-8 sm:h-8 text-white"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -74,7 +77,7 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={2}
+          strokeWidth={2.5}
           d="M5 15l7-7 7 7"
         />
       </svg>
@@ -85,25 +88,27 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex justify-between px-4 sm:px-8 max-w-3xl mx-auto select-none touch-none"
-      >
-      {/* Left Controls */}
-      <div className="relative w-48 h-48">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2">
-          {arrowButton('ArrowUp', 0)}
+      className="fixed bottom-4 left-0 right-0 px-4 sm:px-8 max-w-xl mx-auto select-none touch-none"
+    >
+      <div className="flex justify-between items-center">
+        {/* Left Controls - More Compact */}
+        <div className="relative w-32 h-32 sm:w-40 sm:h-40">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2">
+            {arrowButton('ArrowUp', 0)}
+          </div>
+          <div className="absolute left-0 top-1/2 -translate-y-1/2">
+            {arrowButton('ArrowLeft', -90)}
+          </div>
         </div>
-        <div className="absolute left-0 top-1/2 -translate-y-1/2">
-          {arrowButton('ArrowLeft', -90)}
-        </div>
-      </div>
 
-      {/* Right Controls */}
-      <div className="relative w-48 h-48">
-        <div className="absolute right-0 top-1/2 -translate-y-1/2">
-          {arrowButton('ArrowRight', 90)}
-        </div>
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
-          {arrowButton('ArrowDown', 180)}
+        {/* Right Controls - More Compact */}
+        <div className="relative w-32 h-32 sm:w-40 sm:h-40">
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            {arrowButton('ArrowRight', 90)}
+          </div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
+            {arrowButton('ArrowDown', 180)}
+          </div>
         </div>
       </div>
     </motion.div>
