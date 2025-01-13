@@ -1,7 +1,12 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PowerUpState, PowerUpType } from './PowerUpState';  
+import { PowerUpState, PowerUpType } from './PowerUpState'; 
 
+interface Coordinate {
+    x: number;
+    y: number;
+  }
+  
 
 interface PowerUpManagerProps {
     powerUp: PowerUpState | null;

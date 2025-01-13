@@ -4,7 +4,6 @@ import ArrowKeys from './ArrowKeys';
 import GameGrid from './GameGrid';
 import PowerUpManager from './PowerUpManager';
 import { PowerUpState, PowerUpType } from './PowerUp';
-import Coordinate from './PowerUp';
 
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
@@ -81,13 +80,13 @@ const calculateGameDimensions = () => {
  
 
 const SnakeGame: React.FC = () => {
+  const [powerUp, setPowerUp] = useState<PowerUpState | null>(null);
+  const [snake, setSnake] = useState<Coordinate[]>([{ x: 10, y: 10 }]);
   // Move all state declarations inside component
   const [isShieldActive, setIsShieldActive] = useState(false);
   const [shieldTimeRemaining, setShieldTimeRemaining] = useState(0);
-  const [powerUp, setPowerUp] = useState<PowerUpState | null>(null);
-  const [{ cellSize, gridSize }, setGameDimensions] = useState(calculateGameDimensions());
-  const [snake, setSnake] = useState<Coordinate[]>([{ x: 10, y: 10 }]);
-  const [food, setFood] = useState<Coordinate>({ x: 15, y: 15 });
+   const [{ cellSize, gridSize }, setGameDimensions] = useState(calculateGameDimensions());
+   const [food, setFood] = useState<Coordinate>({ x: 15, y: 15 });
   const [direction, setDirection] = useState<Direction>('RIGHT');
   const [nextDirection, setNextDirection] = useState<Direction>('RIGHT');
   const [gameOver, setGameOver] = useState(false);
@@ -188,7 +187,6 @@ useEffect(() => {
 
   const moveSnake = useCallback((timestamp: number) => {
     if (gameOver || isPaused) return;
-    
     const elapsed = timestamp - lastMoveTime.current;
     if (elapsed < gameSpeed * FRAME_CHECK_MULTIPLIER) {
       animationFrameRef.current = requestAnimationFrame(moveSnake);
@@ -196,9 +194,9 @@ useEffect(() => {
     }
   
     lastMoveTime.current = timestamp;
-    
     const newSnake = [...snake];
     const head = { ...newSnake[0] };
+    newSnake.unshift(head);  
     
     // Update head position based on direction
     switch (direction) {
@@ -207,6 +205,7 @@ useEffect(() => {
       case 'LEFT': head.x = head.x - 1; break;
       case 'RIGHT': head.x = head.x + 1; break;
     }
+
   
       // Handle wrapping around edges
   head.x = (head.x + gridSize) % gridSize;
