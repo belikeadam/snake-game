@@ -2,19 +2,31 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ArrowKeys from './ArrowKeys';
 import GameGrid from './GameGrid';
-
+import PowerUpManager from './PowerUpManager';
+import { PowerUpState, PowerUpType } from './PowerUp';
+import Coordinate from './PowerUp';
 
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
-type Coordinate = { x: number; y: number };
-type PowerUpType = 'SPEED' | 'MULTIPLIER' | 'SHIELD';
 type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
 type Theme = 'CLASSIC' | 'NEON' | 'RETRO';
 type GridPattern = 'NONE' | 'DOTS' | 'LINES';
 type FoodEmoji = '🍕' | '🍔' | '🍎' | '🍗' | '🍪' | '🍉';
 
-interface PowerUp extends Coordinate {
-  type: PowerUpType;
-}
+// Move constants outside component
+const MIN_CELL_SIZE = 15;
+const MAX_CELL_SIZE = 25;
+const INITIAL_GRID_SIZE = 20;
+const INITIAL_CELL_SIZE = 25;
+const INITIAL_GAME_SPEED = 200;
+const MAX_SPEED = 80;
+const SPEED_INCREMENT_INTERVAL = 5;
+const FRAME_CHECK_MULTIPLIER = 0.4;
+
+const DIFFICULTY_SETTINGS = {
+  EASY: { speed: 250, multiplier: 1 },
+  MEDIUM: { speed: 200, multiplier: 1.5 },
+  HARD: { speed: 150, multiplier: 2 }
+};
 
 interface ThemeColors {
   background: string;
@@ -22,23 +34,6 @@ interface ThemeColors {
   food: string;
   grid: string;
 }
-
-const MIN_CELL_SIZE = 15; // Minimum cell size for smaller screens
-const MAX_CELL_SIZE = 25; // Maximum cell size for larger screens
-
-const INITIAL_GRID_SIZE = 20;
-const INITIAL_CELL_SIZE = 25;
-const INITIAL_GAME_SPEED = 200;
-const MAX_SPEED = 80;
-const SPEED_INCREMENT_INTERVAL = 5;
-const FRAME_CHECK_MULTIPLIER = 0.4;  
-
-
-const DIFFICULTY_SETTINGS = {
-  EASY: { speed: 250, multiplier: 1 },
-  MEDIUM: { speed: 200, multiplier: 1.5 },
-  HARD: { speed: 150, multiplier: 2 }
-};
 
 const THEME_COLORS: Record<Theme, ThemeColors> = {
   CLASSIC: {
@@ -83,9 +78,14 @@ const calculateGameDimensions = () => {
   };
 };
 
-const SnakeGame: React.FC = () => {
-  const [{ cellSize, gridSize }, setGameDimensions] = useState(calculateGameDimensions());
+ 
 
+const SnakeGame: React.FC = () => {
+  // Move all state declarations inside component
+  const [isShieldActive, setIsShieldActive] = useState(false);
+  const [shieldTimeRemaining, setShieldTimeRemaining] = useState(0);
+  const [powerUp, setPowerUp] = useState<PowerUpState | null>(null);
+  const [{ cellSize, gridSize }, setGameDimensions] = useState(calculateGameDimensions());
   const [snake, setSnake] = useState<Coordinate[]>([{ x: 10, y: 10 }]);
   const [food, setFood] = useState<Coordinate>({ x: 15, y: 15 });
   const [direction, setDirection] = useState<Direction>('RIGHT');
@@ -95,7 +95,6 @@ const SnakeGame: React.FC = () => {
   const [highScore, setHighScore] = useState(0);
   const [gameSpeed, setGameSpeed] = useState(INITIAL_GAME_SPEED);
   const [difficulty, setDifficulty] = useState<Difficulty>('MEDIUM');
-  const [powerUp, setPowerUp] = useState<PowerUp | null>(null);
   const [scoreMultiplier, setScoreMultiplier] = useState(1);
   const [particles, setParticles] = useState<Coordinate[]>([]);
   const [isPaused, setIsPaused] = useState(false);
@@ -103,6 +102,7 @@ const SnakeGame: React.FC = () => {
   const [gridPattern, setGridPattern] = useState<GridPattern>('NONE');
   const [showTrail, setShowTrail] = useState(true);
   const [currentFood, setCurrentFood] = useState<FoodEmoji>('🍎');
+
 
   const themeColors = THEME_COLORS[currentTheme];
 
@@ -157,17 +157,19 @@ useEffect(() => {
   }, [snake, gridSize]);
 
   const generatePowerUp = useCallback(() => {
-    if (Math.random() > 0.8) { // 20% chance to spawn power-up
+    if (Math.random() > 0.8) {
       const types: PowerUpType[] = ['SPEED', 'MULTIPLIER', 'SHIELD'];
       const type = types[Math.floor(Math.random() * types.length)];
-      const position = {
+      const newPowerUp: PowerUpState = {
         x: Math.floor(Math.random() * (gridSize - 2)) + 1,
-        y: Math.floor(Math.random() * (gridSize - 2)) + 1
+        y: Math.floor(Math.random() * (gridSize - 2)) + 1,
+        type,
+        active: false,
+        duration: 5000
       };
-      setPowerUp({ ...position, type });
+      setPowerUp(newPowerUp);
     }
   }, [gridSize]);
-
   const createParticles = (position: Coordinate) => {
     const newParticles = Array.from({ length: 8 }, () => ({
       x: position.x + (Math.random() - 0.5) * 2,
@@ -198,41 +200,28 @@ useEffect(() => {
     const newSnake = [...snake];
     const head = { ...newSnake[0] };
     
-    const currentDirection = movementQueue.length > 0 ? movementQueue[0] : nextDirection;
-    if (movementQueue.length > 0) {
-      setMovementQueue(prev => prev.slice(1));
-      setDirection(currentDirection);
+    // Update head position based on direction
+    switch (direction) {
+      case 'UP': head.y = head.y - 1; break;
+      case 'DOWN': head.y = head.y + 1; break;
+      case 'LEFT': head.x = head.x - 1; break;
+      case 'RIGHT': head.x = head.x + 1; break;
     }
   
-    // Update head position with boundary checks
-    switch (currentDirection) {
-      case 'UP':
-        head.y = head.y - 1;
-        if (head.y < 0) head.y = gridSize - 1;
-        break;
-      case 'DOWN':
-        head.y = head.y + 1;
-        if (head.y >= gridSize) head.y = 0;
-        break;
-      case 'LEFT':
-        head.x = head.x - 1;
-        if (head.x < 0) head.x = gridSize - 1;
-        break;
-      case 'RIGHT':
-        head.x = head.x + 1;
-        if (head.x >= gridSize) head.x = 0;
-        break;
-    }
+      // Handle wrapping around edges
+  head.x = (head.x + gridSize) % gridSize;
+  head.y = (head.y + gridSize) % gridSize;
+  // Check for self-collision
+  const selfCollision = !isShieldActive && newSnake.slice(1).some(segment => 
+    segment.x === head.x && segment.y === head.y
+  );
   
-  
-    const selfCollision = newSnake.some(segment => segment.x === head.x && segment.y === head.y);
-    if (selfCollision) {
-      setGameOver(true);
-      setHighScore(prev => Math.max(prev, score));
-      return;
-    }
+  if (selfCollision) {
+    setGameOver(true);
+    setHighScore(prev => Math.max(prev, score));
+    return;
+  }
 
-    newSnake.unshift(head);
 
     if (head.x === food.x && head.y === food.y) {
       const baseScore = 1;
@@ -248,22 +237,32 @@ useEffect(() => {
     }
 
     if (powerUp && head.x === powerUp.x && head.y === powerUp.y) {
-      switch (powerUp.type) {
+      const activePowerUp: PowerUpState = { 
+        ...powerUp, 
+        active: true,
+        duration: powerUp.duration // Include duration from existing powerUp
+      };
+      
+      switch (activePowerUp.type) {
         case 'SPEED':
           setGameSpeed(prev => Math.max(prev - 30, MAX_SPEED));
           break;
         case 'MULTIPLIER':
           setScoreMultiplier(prev => prev * 2);
-          setTimeout(() => setScoreMultiplier(1), 5000); // Reset after 5s
+          setTimeout(() => setScoreMultiplier(1), activePowerUp.duration);
           break;
         case 'SHIELD':
-          // Implement shield logic here
+          setIsShieldActive(true);
+          setShieldTimeRemaining(activePowerUp.duration);
+          setTimeout(() => {
+            setIsShieldActive(false);
+            setShieldTimeRemaining(0);
+          }, activePowerUp.duration);
           break;
       }
       createParticles(powerUp);
       setPowerUp(null);
     }
-
     setSnake(newSnake);
     animationFrameRef.current = requestAnimationFrame(moveSnake);
   }, [snake, nextDirection, movementQueue, food, score, gameOver, generateFood, gridSize, gameSpeed, adjustGameDifficulty, difficulty, powerUp, scoreMultiplier, isPaused]);
@@ -486,22 +485,12 @@ useEffect(() => {
     {snake.map((segment, index) => renderSnakeSegment(segment, index))}
   </AnimatePresence>
         {renderFood()}
-        {powerUp && (
-          <motion.div
-            key={`powerup-${powerUp.x}-${powerUp.y}`}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute rounded-full"
-            style={{
-              width: `${cellSize}px`,
-              height: `${cellSize}px`,
-              left: `${powerUp.x * cellSize}px`,
-              top: `${powerUp.y * cellSize}px`,
-              backgroundColor: powerUp.type === 'SPEED' ? 'yellow' :
-                powerUp.type === 'MULTIPLIER' ? 'purple' : 'blue'
-            }}
-          />
-        )}
+        <PowerUpManager
+  powerUp={powerUp}
+  cellSize={cellSize}
+  isShieldActive={isShieldActive}
+/>
+
         {renderPauseOverlay()}
         {renderGameOverOverlay()}  
 
