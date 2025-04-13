@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface ArrowKeysProps {
@@ -7,8 +7,14 @@ interface ArrowKeysProps {
 
 const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
+  const lastKeyPressTime = useRef<number>(0);
+  const DEBOUNCE_TIME = 50; // Minimum time between key presses in ms
 
   const handleArrowClick = useCallback((direction: string) => {
+    const now = Date.now();
+    if (now - lastKeyPressTime.current < DEBOUNCE_TIME) return;
+    lastKeyPressTime.current = now;
+
     setPressedKeys(prev => new Set([...prev, direction]));
     onDirectionChange(direction);
     if (navigator.vibrate) navigator.vibrate(5);
@@ -18,12 +24,29 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
+        const now = Date.now();
+        if (now - lastKeyPressTime.current < DEBOUNCE_TIME) return;
+        lastKeyPressTime.current = now;
         onDirectionChange(e.key);
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        setPressedKeys(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(e.key);
+          return newSet;
+        });
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown, { passive: false });
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [onDirectionChange]);
 
   const arrowButton = (direction: string, rotation: number) => (
@@ -31,7 +54,7 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
       className={`w-14 h-14 sm:w-16 sm:h-16 rounded-lg border-2 ${
         pressedKeys.has(direction) ? 'bg-green-500 border-green-600' : 'bg-gray-700 border-gray-600'
       } flex items-center justify-center transform active:scale-95 transition-all duration-50 
-      shadow-lg active:shadow-sm touch-none`}
+      shadow-lg active:shadow-sm touch-none select-none`}
       animate={{
         scale: pressedKeys.has(direction) ? 0.95 : 1,
         backgroundColor: pressedKeys.has(direction) ? '#22c55e' : '#374151'
@@ -42,8 +65,16 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
         e.preventDefault();
         handleArrowClick(direction);
       }}
+      onTouchEnd={(e) => {
+        e.preventDefault();
+        setPressedKeys(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(direction);
+          return newSet;
+        });
+      }}
       whileTap={{ scale: 0.9 }}
-      transition={{ type: "spring", stiffness: 700, damping: 15 }} // Faster animation
+      transition={{ type: "spring", stiffness: 700, damping: 15 }}
     >
       <svg
         className="w-6 h-6 sm:w-8 sm:h-8 text-white"

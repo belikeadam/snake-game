@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ArrowKeys from './ArrowKeys';
 import GameGrid from './GameGrid';
@@ -31,7 +31,9 @@ const INITIAL_CELL_SIZE = 25;
 const INITIAL_GAME_SPEED = 200;
 const MAX_SPEED = 80;
 const SPEED_INCREMENT_INTERVAL = 5;
-const FRAME_CHECK_MULTIPLIER = 0.4;  
+const FRAME_CHECK_MULTIPLIER = 0.4;
+const MOVEMENT_BUFFER_SIZE = 3; // Allow more queued movements
+const MIN_MOVE_INTERVAL = 50; // Minimum time between moves in ms
 
 
 const DIFFICULTY_SETTINGS = {
@@ -111,7 +113,26 @@ const SnakeGame: React.FC = () => {
 
   const [movementQueue, setMovementQueue] = useState<Direction[]>([]);
 
-  
+  const gameLoopRef = useRef<number | null>(null);
+  const lastRenderTime = useRef<number>(0);
+  const TARGET_FPS = 60;
+  const FRAME_TIME = 1000 / TARGET_FPS;
+
+  // Optimize snake rendering with useMemo
+  const snakeSegments = useMemo(() => 
+    snake.map((segment, index) => ({
+      ...segment,
+      key: `${segment.x}-${segment.y}-${index}`,
+      style: {
+        width: `${cellSize}px`,
+        height: `${cellSize}px`,
+        left: `${segment.x * cellSize}px`,
+        top: `${segment.y * cellSize}px`,
+        backgroundColor: themeColors.snake,
+        opacity: showTrail ? 1 - (index * 0.05) : 1
+      }
+    })), [snake, cellSize, themeColors.snake, showTrail]);
+
   const handleDirectionChange = useCallback((newDirection: string) => {
     const nextDir = newDirection.replace('Arrow', '').toUpperCase() as Direction;
     const isValidMove = (current: Direction, next: Direction): boolean => {
@@ -120,7 +141,13 @@ const SnakeGame: React.FC = () => {
   
     if (isValidMove(direction, nextDir)) {
       setNextDirection(nextDir);
-      setMovementQueue(prev => prev.length < 2 ? [...prev, nextDir] : prev);
+      setMovementQueue(prev => {
+        // Only add if not already the last direction in queue
+        if (prev[prev.length - 1] !== nextDir) {
+          return prev.length < MOVEMENT_BUFFER_SIZE ? [...prev, nextDir] : prev;
+        }
+        return prev;
+      });
     }
   }, [direction]);
 
@@ -186,18 +213,26 @@ useEffect(() => {
 
   const moveSnake = useCallback((timestamp: number) => {
     if (gameOver || isPaused) return;
-    
-    const elapsed = timestamp - lastMoveTime.current;
-    if (elapsed < gameSpeed * FRAME_CHECK_MULTIPLIER) {
-      animationFrameRef.current = requestAnimationFrame(moveSnake);
+
+    // Frame rate limiting
+    if (timestamp - lastRenderTime.current < FRAME_TIME) {
+      gameLoopRef.current = requestAnimationFrame(moveSnake);
       return;
     }
-  
+    lastRenderTime.current = timestamp;
+    
+    const elapsed = timestamp - lastMoveTime.current;
+    if (elapsed < Math.max(gameSpeed * FRAME_CHECK_MULTIPLIER, MIN_MOVE_INTERVAL)) {
+      gameLoopRef.current = requestAnimationFrame(moveSnake);
+      return;
+    }
+
     lastMoveTime.current = timestamp;
     
     const newSnake = [...snake];
     const head = { ...newSnake[0] };
     
+    // Process movement queue with improved timing
     const currentDirection = movementQueue.length > 0 ? movementQueue[0] : nextDirection;
     if (movementQueue.length > 0) {
       setMovementQueue(prev => prev.slice(1));
@@ -265,8 +300,27 @@ useEffect(() => {
     }
 
     setSnake(newSnake);
-    animationFrameRef.current = requestAnimationFrame(moveSnake);
+    gameLoopRef.current = requestAnimationFrame(moveSnake);
   }, [snake, nextDirection, movementQueue, food, score, gameOver, generateFood, gridSize, gameSpeed, adjustGameDifficulty, difficulty, powerUp, scoreMultiplier, isPaused]);
+
+  useEffect(() => {
+    gameLoopRef.current = requestAnimationFrame(moveSnake);
+    return () => {
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, [moveSnake]);
+
+  // Optimize food rendering
+  const foodStyle = useMemo(() => ({
+    width: `${cellSize}px`,
+    height: `${cellSize}px`,
+    left: `${food.x * cellSize}px`,
+    top: `${food.y * cellSize}px`,
+    fontSize: `${cellSize * 0.8}px`
+  }), [food, cellSize]);
+
   const renderSnakeSegment = (segment: Coordinate, index: number) => {
     return (
       <motion.div
@@ -294,13 +348,7 @@ useEffect(() => {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         className="absolute flex items-center justify-center"
-        style={{
-          width: `${cellSize}px`,
-          height: `${cellSize}px`,
-          left: `${food.x * cellSize}px`,
-          top: `${food.y * cellSize}px`,
-          fontSize: `${cellSize * 0.8}px`
-        }}
+        style={foodStyle}
       >
         {currentFood}
       </motion.div>
@@ -483,7 +531,16 @@ useEffect(() => {
     color={themeColors.grid}
   />
   <AnimatePresence>
-    {snake.map((segment, index) => renderSnakeSegment(segment, index))}
+    {snakeSegments.map((segment) => (
+      <motion.div
+        key={segment.key}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0 }}
+        className="absolute rounded-sm"
+        style={segment.style}
+      />
+    ))}
   </AnimatePresence>
         {renderFood()}
         {powerUp && (
