@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface GameGridProps {
-  pattern: 'NONE' | 'DOTS' | 'LINES';
+  pattern: 'NONE' | 'DOTS' | 'LINES' | 'GRID';
   gridSize: number;
   cellSize: number;
   color: string;
@@ -19,12 +19,12 @@ const GameGrid: React.FC<GameGridProps> = ({ pattern, gridSize, cellSize, color 
             key={`dot-${i}-${j}`}
             className="absolute rounded-full"
             style={{
-              width: '4px',
-              height: '4px',
+              width: '2px',
+              height: '2px',
               backgroundColor: color,
-              left: `${i * cellSize + cellSize / 2 - 2}px`,
-              top: `${j * cellSize + cellSize / 2 - 2}px`,
-              opacity: 0.3
+              opacity: 0.5,
+              left: `${i * cellSize + cellSize / 2}px`,
+              top: `${j * cellSize + cellSize / 2}px`,
             }}
           />
         );
@@ -35,45 +35,93 @@ const GameGrid: React.FC<GameGridProps> = ({ pattern, gridSize, cellSize, color 
 
   const renderLines = () => {
     const lines = [];
+    
     // Vertical lines
-    for (let i = 1; i < gridSize; i++) {
+    for (let i = 0; i <= gridSize; i++) {
       lines.push(
         <div
-          key={`vline-${i}`}
+          key={`v-line-${i}`}
           className="absolute"
           style={{
             width: '1px',
-            height: '100%',
+            height: `${gridSize * cellSize}px`,
             backgroundColor: color,
+            opacity: 0.3,
             left: `${i * cellSize}px`,
-            opacity: 0.2
+            top: '0',
           }}
         />
       );
     }
+    
     // Horizontal lines
-    for (let i = 1; i < gridSize; i++) {
+    for (let i = 0; i <= gridSize; i++) {
       lines.push(
         <div
-          key={`hline-${i}`}
+          key={`h-line-${i}`}
           className="absolute"
           style={{
-            width: '100%',
+            width: `${gridSize * cellSize}px`,
             height: '1px',
             backgroundColor: color,
+            opacity: 0.3,
+            left: '0',
             top: `${i * cellSize}px`,
-            opacity: 0.2
           }}
         />
       );
     }
+    
     return lines;
+  };
+
+  const renderGrid = () => {
+    const grid = [];
+    
+    // Vertical lines
+    for (let i = 0; i <= gridSize; i++) {
+      grid.push(
+        <div
+          key={`v-grid-${i}`}
+          className="absolute"
+          style={{
+            width: '1px',
+            height: `${gridSize * cellSize}px`,
+            backgroundColor: color,
+            opacity: 0.5,
+            left: `${i * cellSize}px`,
+            top: '0',
+          }}
+        />
+      );
+    }
+    
+    // Horizontal lines
+    for (let i = 0; i <= gridSize; i++) {
+      grid.push(
+        <div
+          key={`h-grid-${i}`}
+          className="absolute"
+          style={{
+            width: `${gridSize * cellSize}px`,
+            height: '1px',
+            backgroundColor: color,
+            opacity: 0.5,
+            left: '0',
+            top: `${i * cellSize}px`,
+          }}
+        />
+      );
+    }
+    
+    return grid;
   };
 
   return (
     <div className="absolute inset-0">
       {pattern === 'DOTS' && renderDots()}
       {pattern === 'LINES' && renderLines()}
+      {pattern === 'GRID' && renderGrid()}
     </div>
   );
 };

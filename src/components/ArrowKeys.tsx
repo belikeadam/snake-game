@@ -3,9 +3,10 @@ import { motion } from 'framer-motion';
 
 interface ArrowKeysProps {
   onDirectionChange: (direction: string) => void;
+  layout?: 'COMPACT' | 'SPREAD';
 }
 
-const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
+const ArrowKeys = ({ onDirectionChange, layout = 'COMPACT' }: ArrowKeysProps) => {
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
   const lastKeyPressTime = useRef<number>(0);
   const DEBOUNCE_TIME = 50; // Minimum time between key presses in ms
@@ -18,35 +19,6 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
     setPressedKeys(prev => new Set([...prev, direction]));
     onDirectionChange(direction);
     if (navigator.vibrate) navigator.vibrate(5);
-  }, [onDirectionChange]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        e.preventDefault();
-        const now = Date.now();
-        if (now - lastKeyPressTime.current < DEBOUNCE_TIME) return;
-        lastKeyPressTime.current = now;
-        onDirectionChange(e.key);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        setPressedKeys(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(e.key);
-          return newSet;
-        });
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown, { passive: false });
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
   }, [onDirectionChange]);
 
   const arrowButton = (direction: string, rotation: number) => (
@@ -92,33 +64,61 @@ const ArrowKeys = ({ onDirectionChange }: ArrowKeysProps) => {
     </motion.button>
   );
 
+  // Compact layout (default)
+  const renderCompactLayout = () => (
+    <div className="flex justify-between items-center">
+      {/* Left Controls - More Compact */}
+      <div className="relative w-32 h-32 sm:w-40 sm:h-40">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2">
+          {arrowButton('ArrowUp', 0)}
+        </div>
+        <div className="absolute left-0 top-1/2 -translate-y-1/2">
+          {arrowButton('ArrowLeft', -90)}
+        </div>
+      </div>
+
+      {/* Right Controls - More Compact */}
+      <div className="relative w-32 h-32 sm:w-40 sm:h-40">
+        <div className="absolute right-0 top-1/2 -translate-y-1/2">
+          {arrowButton('ArrowRight', 90)}
+        </div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
+          {arrowButton('ArrowDown', 180)}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Spread layout (more traditional D-pad style)
+  const renderSpreadLayout = () => (
+    <div className="flex flex-col items-center">
+      <div className="mb-2">
+        {arrowButton('ArrowUp', 0)}
+      </div>
+      <div className="flex items-center">
+        <div className="mr-2">
+          {arrowButton('ArrowLeft', -90)}
+        </div>
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center">
+          <span className="text-white text-xs">DPAD</span>
+        </div>
+        <div className="ml-2">
+          {arrowButton('ArrowRight', 90)}
+        </div>
+      </div>
+      <div className="mt-2">
+        {arrowButton('ArrowDown', 180)}
+      </div>
+    </div>
+  );
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="fixed bottom-4 left-0 right-0 px-4 sm:px-8 max-w-xl mx-auto select-none touch-none"
     >
-      <div className="flex justify-between items-center">
-        {/* Left Controls - More Compact */}
-        <div className="relative w-32 h-32 sm:w-40 sm:h-40">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2">
-            {arrowButton('ArrowUp', 0)}
-          </div>
-          <div className="absolute left-0 top-1/2 -translate-y-1/2">
-            {arrowButton('ArrowLeft', -90)}
-          </div>
-        </div>
-
-        {/* Right Controls - More Compact */}
-        <div className="relative w-32 h-32 sm:w-40 sm:h-40">
-          <div className="absolute right-0 top-1/2 -translate-y-1/2">
-            {arrowButton('ArrowRight', 90)}
-          </div>
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
-            {arrowButton('ArrowDown', 180)}
-          </div>
-        </div>
-      </div>
+      {layout === 'COMPACT' ? renderCompactLayout() : renderSpreadLayout()}
     </motion.div>
   );
 };
